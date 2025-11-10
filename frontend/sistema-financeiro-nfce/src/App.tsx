@@ -5,6 +5,7 @@ import PessoasListPage from './features/management/pessoas/PessoasListPage'
 import PessoasFormPage from './features/management/pessoas/PessoasFormPage'
 import ClassificacaoListPage from './features/management/classificacao/ClassificacaoListPage'
 import ClassificacaoFormPage from './features/management/classificacao/ClassificacaoFormPage'
+import RAGPage from './features/rag/RAGPage'
 import Sidebar from './features/management/components/Sidebar'
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/extrator" element={<InvoiceExtractionPage />} />
+            <Route path="/rag" element={<RAGPage />} />
 
             {/* Pessoas */}
             <Route path="/fornecedores" element={<PessoasListPage tipo="FORNECEDOR" />} />

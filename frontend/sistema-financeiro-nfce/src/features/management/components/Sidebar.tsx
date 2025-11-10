@@ -12,6 +12,7 @@ export default function Sidebar() {
       <nav className="p-3 space-y-1 text-sm">
         <NavLink to="/" end className={({isActive}) => `${base} ${isActive ? active : ''}`}>Dashboard</NavLink>
         <NavLink to="/extrator" className={({isActive}) => `${base} ${isActive ? active : ''}`}>Extrator</NavLink>
+        <NavLink to="/rag" className={({isActive}) => `${base} ${isActive ? active : ''}`}>Consulta RAG</NavLink>
         <div className="mt-3 px-2 text-xs uppercase text-white/60">Cadastros</div>
         <NavLink to="/fornecedores" className={({isActive}) => `${base} ${isActive ? active : 'text-white/90 hover:bg-white/10'}`}>Fornecedores</NavLink>
         <NavLink to="/clientes" className={({isActive}) => `${base} ${isActive ? active : 'text-white/90 hover:bg-white/10'}`}>Clientes</NavLink>
