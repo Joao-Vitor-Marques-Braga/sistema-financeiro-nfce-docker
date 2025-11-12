@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 import re
-from django.db.models import Q
+from django.db.models import Q, Sum
 from sistema_financeiro.extrator_fiscal.models import (
     Pessoas, Classificacao, MovimentoContas, ParcelaContas
 )
@@ -187,12 +187,16 @@ class RAGEmbeddingsService:
         # Retorna apenas os mais relevantes (score > 0)
         relevant = [item['candidate'] for item in scored_candidates if item['score'] > 0]
         
-        # Remove o campo 'text' antes de retornar
+        if self._question_requests_total(question_lower):
+            summaries = self._build_movimento_summaries(question_lower)
+        else:
+            summaries = []
+
         for item in relevant:
-            if 'text' in item:
-                del item['text']
-        
-        return relevant
+            if 'data' in item and 'valor_total' in item['data']:
+                item['data']['valor_total_formatado'] = self._format_currency(item['data']['valor_total'])
+
+        return summaries + relevant
     
     def _extract_important_phrases(self, question: str) -> List[str]:
         """
@@ -224,4 +228,46 @@ class RAGEmbeddingsService:
                 phrases.append(phrase)
         
         return phrases
+
+    def _question_requests_total(self, question: str) -> bool:
+        return any(word in question for word in ['total', 'soma', 'somar', 'valor total', 'valor_total'])
+
+    def _build_movimento_summaries(self, question: str) -> List[Dict[str, Any]]:
+        queryset = MovimentoContas.objects.all()
+
+        if 'receber' in question:
+            queryset = queryset.filter(tipo='ARECEBER')
+        elif 'pagar' in question or 'apagar' in question:
+            queryset = queryset.filter(tipo='APAGAR')
+
+        total_valor = queryset.aggregate(total=Sum('valor_total')).get('total') or 0
+        quantidade = queryset.count()
+        if quantidade == 0:
+            return []
+
+        media = float(total_valor) / quantidade if quantidade else 0
+        tipo_label = 'Todos'
+        if 'receber' in question:
+            tipo_label = 'A Receber'
+        elif 'pagar' in question or 'apagar' in question:
+            tipo_label = 'A Pagar'
+
+        return [{
+            'type': 'movimento_resumo',
+            'data': {
+                'tipo_movimento': tipo_label,
+                'quantidade_movimentos': quantidade,
+                'valor_total_soma': float(total_valor),
+                'valor_total_formatado': self._format_currency(total_valor),
+                'valor_medio_formatado': self._format_currency(media)
+            }
+        }]
+
+    def _format_currency(self, value: Any) -> str:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return 'R$ 0,00'
+        formatted = f"{numeric:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        return f"R$ {formatted}"
 

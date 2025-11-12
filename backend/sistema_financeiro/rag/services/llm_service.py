@@ -83,6 +83,9 @@ class LLMService:
         Returns:
             Prompt completo
         """
+        # Verifica se há resumo agregado no contexto
+        has_summary = 'movimento_resumo' in context_str.lower() or 'valor_total_soma' in context_str.lower()
+        
         prompt = f"""Você é um assistente especializado em análise de dados financeiros de um sistema de gestão de notas fiscais.
 
 Contexto do Banco de Dados (recuperado usando RAG {rag_type}):
@@ -94,11 +97,13 @@ Instruções:
 1. Analise o contexto fornecido acima
 2. Responda a pergunta do usuário de forma clara e objetiva
 3. Use APENAS as informações do contexto fornecido
-4. Se o contexto não contiver informações suficientes, informe isso de forma educada
-5. Formate números monetários em Real (R$)
-6. Formate datas no padrão brasileiro (dd/mm/aaaa)
-7. Seja conciso mas completo
-8. Responda em português brasileiro
+4. IMPORTANTE: Se houver um item "movimento_resumo" ou "valor_total_soma" no contexto, USE ESSE VALOR como resposta principal para perguntas sobre total/soma
+5. Se o contexto não contiver informações suficientes, informe isso de forma educada
+6. Formate números monetários em Real (R$), usando ponto como separador de milhar e vírgula como separador decimal (ex: R$ 1.234,56)
+7. Formate datas no padrão brasileiro (dd/mm/aaaa)
+8. Seja conciso mas completo
+9. Responda em português brasileiro
+10. Para perguntas sobre total/soma de valores, priorize o valor já calculado no resumo (valor_total_soma ou valor_total_formatado) em vez de somar valores individuais
 
 Resposta:"""
         

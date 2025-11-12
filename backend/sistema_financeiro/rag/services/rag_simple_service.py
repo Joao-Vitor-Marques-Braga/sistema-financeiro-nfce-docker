@@ -3,7 +3,7 @@ Serviço RAG Simples - Busca textual nos modelos do banco de dados.
 """
 from typing import List, Dict, Any
 import re
-from django.db.models import Q
+from django.db.models import Q, Sum
 from sistema_financeiro.extrator_fiscal.models import (
     Pessoas, Classificacao, MovimentoContas, ParcelaContas
 )
@@ -224,36 +224,61 @@ class RAGSimpleService:
     def _search_movimentos(self, question: str, entities: Dict) -> List[Dict[str, Any]]:
         """Busca em MovimentoContas."""
         results = []
-        queryset = MovimentoContas.objects.select_related(
+        question_lower = question.lower()
+        requests_total = self._question_requests_total(question_lower)
+        
+        # Queryset base para agregações (sempre filtra por tipo quando mencionado)
+        base_queryset = MovimentoContas.objects.select_related(
             'fornecedor_cliente', 'faturado'
         ).prefetch_related('classificacoes')
-        
+
         # Filtra por tipo se mencionado
-        if 'pagar' in question:
-            queryset = queryset.filter(tipo='APAGAR')
-        elif 'receber' in question:
-            queryset = queryset.filter(tipo='ARECEBER')
-        
-        # Busca por palavras-chave
-        palavras = question.split()
-        q_objects = Q()
-        for palavra in palavras:
-            if len(palavra) > 3:
-                q_objects |= Q(identificacao__icontains=palavra)
-                q_objects |= Q(descricao__icontains=palavra)
-                q_objects |= Q(numero_nota_fiscal__icontains=palavra)
-                q_objects |= Q(fornecedor_cliente__razao_social__icontains=palavra)
-                q_objects |= Q(faturado__razao_social__icontains=palavra)
-        if q_objects:
-            queryset = queryset.filter(q_objects)
-        
-        movimentos = queryset[:self.context_limit]
-        
+        if 'pagar' in question_lower or 'apagar' in question_lower:
+            base_queryset = base_queryset.filter(tipo='APAGAR')
+        elif 'receber' in question_lower or 'areceber' in question_lower:
+            base_queryset = base_queryset.filter(tipo='ARECEBER')
+
+        # Se a pergunta pede total, não aplica filtros de palavras-chave para a agregação
+        # Mas ainda busca alguns movimentos para contexto
+        if requests_total:
+            # Para totais, usa o queryset base sem filtros de palavras-chave
+            aggregation_queryset = base_queryset
+            # Busca alguns movimentos recentes para contexto
+            movimentos_queryset = base_queryset.order_by('-data_criacao')[:self.context_limit]
+        else:
+            # Para buscas normais, aplica filtros de palavras-chave
+            aggregation_queryset = base_queryset
+            palavras = question_lower.split()
+            # Remove palavras comuns que não devem filtrar
+            stop_words = {'qual', 'quais', 'quanto', 'quantos', 'como', 'onde', 'quando', 
+                         'de', 'da', 'do', 'em', 'para', 'com', 'por', 'é', 'são', 'o', 'a', 'os', 'as',
+                         'total', 'soma', 'somar', 'valor', 'contas'}
+            palavras_filtro = [p for p in palavras if len(p) > 3 and p not in stop_words]
+            
+            if palavras_filtro:
+                q_objects = Q()
+                for palavra in palavras_filtro:
+                    q_objects |= Q(identificacao__icontains=palavra)
+                    q_objects |= Q(descricao__icontains=palavra)
+                    q_objects |= Q(numero_nota_fiscal__icontains=palavra)
+                    q_objects |= Q(fornecedor_cliente__razao_social__icontains=palavra)
+                    q_objects |= Q(faturado__razao_social__icontains=palavra)
+                if q_objects:
+                    aggregation_queryset = aggregation_queryset.filter(q_objects)
+                    movimentos_queryset = aggregation_queryset.order_by('-data_criacao')[:self.context_limit]
+                else:
+                    movimentos_queryset = base_queryset.order_by('-data_criacao')[:self.context_limit]
+            else:
+                movimentos_queryset = base_queryset.order_by('-data_criacao')[:self.context_limit]
+
+        movimentos = list(movimentos_queryset)
+
+        # Adiciona movimentos individuais ao contexto
         for movimento in movimentos:
             fornecedor_nome = movimento.fornecedor_cliente.razao_social if movimento.fornecedor_cliente else None
             faturado_nome = movimento.faturado.razao_social if movimento.faturado else None
             classificacoes = [c.descricao for c in movimento.classificacoes.all()]
-            
+
             results.append({
                 'type': 'movimento',
                 'data': {
@@ -266,12 +291,53 @@ class RAGSimpleService:
                     'fornecedor_cliente': fornecedor_nome,
                     'faturado': faturado_nome,
                     'valor_total': float(movimento.valor_total),
+                    'valor_total_formatado': self._format_currency(movimento.valor_total),
                     'status': movimento.get_status_display(),
                     'classificacoes': classificacoes
                 }
             })
-        
+
+        # Se a pergunta pede total, cria resumo agregado
+        if requests_total:
+            summary = aggregation_queryset.aggregate(total_valor=Sum('valor_total'))
+            total_valor = summary.get('total_valor') or 0
+            quantidade_movimentos = aggregation_queryset.count()
+            media = float(total_valor) / quantidade_movimentos if quantidade_movimentos > 0 else 0
+
+            tipo_movimento_label = 'Todos'
+            if 'receber' in question_lower or 'areceber' in question_lower:
+                tipo_movimento_label = 'A Receber'
+            elif 'pagar' in question_lower or 'apagar' in question_lower:
+                tipo_movimento_label = 'A Pagar'
+
+            # Insere o resumo no início
+            results.insert(0, {
+                'type': 'movimento_resumo',
+                'data': {
+                    'tipo_movimento': tipo_movimento_label,
+                    'quantidade_movimentos': quantidade_movimentos,
+                    'valor_total_soma': float(total_valor),
+                    'valor_total_formatado': self._format_currency(total_valor),
+                    'valor_medio_formatado': self._format_currency(media)
+                }
+            })
+
         return results
+
+    def _question_requests_total(self, question: str) -> bool:
+        """Verifica se a pergunta está pedindo um total/soma"""
+        question_lower = question.lower()
+        total_keywords = ['total', 'soma', 'somar', 'somatório', 'somatório', 'soma total', 
+                         'valor total', 'valor_total', 'total de', 'quanto é', 'quanto vale']
+        return any(keyword in question_lower for keyword in total_keywords)
+
+    def _format_currency(self, value: Any) -> str:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return 'R$ 0,00'
+        formatted = f"{numeric:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        return f"R$ {formatted}"
     
     def _search_parcelas(self, question: str, entities: Dict) -> List[Dict[str, Any]]:
         """Busca em ParcelaContas."""
