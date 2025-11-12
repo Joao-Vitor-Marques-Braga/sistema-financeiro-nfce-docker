@@ -63,8 +63,6 @@ export default function RAGPage() {
               <ul className="list-disc list-inside space-y-1 text-sm text-blue-700">
                 <li>Quantos fornecedores temos cadastrados?</li>
                 <li>Qual o total de contas a pagar?</li>
-                <li>Quais são as parcelas vencidas?</li>
-                <li>Liste os movimentos do último mês</li>
                 <li>Qual a receita total?</li>
               </ul>
             </div>
