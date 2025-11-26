@@ -1,7 +1,5 @@
 import { FileUpload } from "./components/FileUpload"
-import { ResultTabs } from "./components/Tabs"
 import { JsonBlock } from "./components/JsonBlock"
-import { InvoiceDataDisplay } from "./components/InvoiceDataDisplay"
 import { ErrorAlert } from "./components/ErrorAlert"
 import { useInvoiceExtraction } from "./hooks/useInvoiceExtraction"
 import { useState } from "react"
@@ -13,14 +11,12 @@ export default function InvoiceExtractionPage() {
     isProcessing,
     result,
     error,
-    activeTab,
-    setActiveTab,
     onFileChange,
     extract,
     clearError,
     clearData,
   } = useInvoiceExtraction()
-  
+
   const [showDataAnalysis, setShowDataAnalysis] = useState(false)
 
   async function onExtractClick() {
@@ -50,9 +46,9 @@ export default function InvoiceExtractionPage() {
   // Se estiver mostrando a análise de dados, renderiza a página de análise
   if (showDataAnalysis) {
     return (
-      <DataAnalysisPage 
-        invoiceData={result || undefined} 
-        onBack={handleBackFromAnalysis} 
+      <DataAnalysisPage
+        invoiceData={result || undefined}
+        onBack={handleBackFromAnalysis}
       />
     )
   }
@@ -71,11 +67,11 @@ export default function InvoiceExtractionPage() {
             onChange={onFileChange}
             fileName={selectedFile ? selectedFile.name : null}
           />
-          
+
           {error && (
             <ErrorAlert message={error} onClose={clearError} />
           )}
-          
+
           <div className="mt-6 flex flex-col sm:flex-row gap-3">
             <button
               type="button"
@@ -85,7 +81,7 @@ export default function InvoiceExtractionPage() {
             >
               {isProcessing ? "Processando..." : "EXTRAIR DADOS"}
             </button>
-            
+
             {result && (
               <button
                 type="button"

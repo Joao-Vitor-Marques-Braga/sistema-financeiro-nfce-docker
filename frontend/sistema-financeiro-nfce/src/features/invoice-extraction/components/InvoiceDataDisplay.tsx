@@ -1,4 +1,3 @@
-import React from "react"
 import type { InvoiceData } from "../types"
 
 interface Props {

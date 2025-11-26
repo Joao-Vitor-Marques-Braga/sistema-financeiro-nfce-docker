@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import InvoiceExtractionPage from './features/invoice-extraction/InvoiceExtractionPage'
 import Dashboard from './features/management/Dashboard'
 import PessoasListPage from './features/management/pessoas/PessoasListPage'
