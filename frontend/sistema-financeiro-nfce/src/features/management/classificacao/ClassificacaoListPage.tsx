@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-const API_BASE_URL = 'http://localhost:8000/api/extrator'
+const API_BASE_URL = 'https://joaovitormb.pythonanywhere.com/api/extrator'
 
 type Classificacao = {
   id: number
@@ -67,7 +67,7 @@ export default function ClassificacaoListPage({ tipo }: Props) {
                 <td className="p-2">{d.status}</td>
                 <td className="p-2 flex gap-2">
                   <Link to={`${tipo === 'DESPESA' ? '/despesas' : '/receitas'}/${d.id}`} className="btn-secondary">Editar</Link>
-                  <button onClick={() => toggleStatus(d.id)} className={`px-2 py-1 rounded ${d.status==='ATIVO'?'bg-yellow-500 text-white':'bg-green-600 text-white'}`}>
+                  <button onClick={() => toggleStatus(d.id)} className={`px-2 py-1 rounded ${d.status === 'ATIVO' ? 'bg-yellow-500 text-white' : 'bg-green-600 text-white'}`}>
                     {d.status === 'ATIVO' ? 'Inativar' : 'Reativar'}
                   </button>
                 </td>

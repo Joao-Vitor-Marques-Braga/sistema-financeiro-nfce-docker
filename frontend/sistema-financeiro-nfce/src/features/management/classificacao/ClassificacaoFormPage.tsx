@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
-const API_BASE_URL = 'http://localhost:8000/api/extrator'
+const API_BASE_URL = 'https://joaovitormb.pythonanywhere.com/api/extrator'
 
 type ClassificacaoPayload = {
   descricao: string
@@ -19,7 +19,7 @@ export default function ClassificacaoFormPage({ tipo }: Props) {
 
   useEffect(() => {
     if (isEdit) {
-      ;(async () => {
+      ; (async () => {
         const res = await fetch(`${API_BASE_URL}/classificacoes/${id}/`)
         const data = await res.json()
         setForm({ descricao: data.descricao, tipo: data.tipo, status: data.status })

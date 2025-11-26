@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-const API_BASE_URL = 'http://localhost:8000/api/extrator'
+const API_BASE_URL = 'https://joaovitormb.pythonanywhere.com/api/extrator'
 
 type Pessoa = {
   id: number
@@ -49,7 +49,7 @@ export default function PessoasListPage({ tipo }: Props) {
             <option value="ATIVO">Ativos</option>
             <option value="INATIVO">Inativos</option>
           </select>
-          <Link to={`/${titulo.toLowerCase()}/novo`.replace('ç','c')} className="btn-primary">Adicionar Novo</Link>
+          <Link to={`/${titulo.toLowerCase()}/novo`.replace('ç', 'c')} className="btn-primary">Adicionar Novo</Link>
           <Link to="/" className="btn-secondary">Voltar</Link>
         </div>
       </div>
@@ -76,8 +76,8 @@ export default function PessoasListPage({ tipo }: Props) {
                   <td className="p-2">{p.cnpj_cpf}</td>
                   <td className="p-2">{p.status}</td>
                   <td className="p-2 flex gap-2">
-                    <Link to={`/${titulo.toLowerCase()}/${p.id}`.replace('ç','c')} className="btn-secondary">Editar</Link>
-                    <button onClick={() => toggleStatus(p.id)} className={`px-2 py-1 rounded ${p.status==='ATIVO'?'bg-yellow-500 text-white':'bg-green-600 text-white'}`}>
+                    <Link to={`/${titulo.toLowerCase()}/${p.id}`.replace('ç', 'c')} className="btn-secondary">Editar</Link>
+                    <button onClick={() => toggleStatus(p.id)} className={`px-2 py-1 rounded ${p.status === 'ATIVO' ? 'bg-yellow-500 text-white' : 'bg-green-600 text-white'}`}>
                       {p.status === 'ATIVO' ? 'Inativar' : 'Reativar'}
                     </button>
                   </td>

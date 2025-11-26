@@ -2,7 +2,7 @@ import type { RAGQueryRequest, RAGQueryResponse, RAGError } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL}/rag`
-  : 'https://joaovitormb.pythonanywhere.com/rag';
+  : 'https://joaovitormb.pythonanywhere.com/api/rag';
 
 export class RAGService {
   static async query(request: RAGQueryRequest): Promise<RAGQueryResponse> {

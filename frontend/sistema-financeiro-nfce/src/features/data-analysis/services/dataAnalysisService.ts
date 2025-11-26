@@ -1,7 +1,7 @@
 import type { DataAnalysisResult, Fornecedor, Faturado, Despesa, MovementCreationResult } from '../types'
 import type { InvoiceData } from '../../invoice-extraction/types'
 
-const API_BASE_URL = 'http://localhost:8000/api/extrator'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://joaovitormb.pythonanywhere.com/api/extrator'
 
 export class DataAnalysisService {
   // Consulta se o fornecedor existe no banco
@@ -9,7 +9,7 @@ export class DataAnalysisService {
     try {
       const response = await fetch(`${API_BASE_URL}/fornecedores/check/?cnpj=${cnpj}`)
       const data = await response.json()
-      
+
       if (data.exists) {
         return {
           razaoSocial: data.razaoSocial,
@@ -35,7 +35,7 @@ export class DataAnalysisService {
     try {
       const response = await fetch(`${API_BASE_URL}/faturados/check/?cpf=${cpf}`)
       const data = await response.json()
-      
+
       if (data.exists) {
         return {
           nome: data.nome,
@@ -61,7 +61,7 @@ export class DataAnalysisService {
     try {
       const response = await fetch(`${API_BASE_URL}/despesas/check/?descricao=${encodeURIComponent(descricao)}`)
       const data = await response.json()
-      
+
       if (data.exists) {
         return {
           descricao: descricao,
@@ -94,7 +94,7 @@ export class DataAnalysisService {
           tipo: 'FORNECEDOR'
         }),
       })
-      
+
       const data = await response.json()
       return data.id
     } catch (error) {
@@ -117,7 +117,7 @@ export class DataAnalysisService {
           tipo: 'FATURADO'
         }),
       })
-      
+
       const data = await response.json()
       return data.id
     } catch (error) {
@@ -139,7 +139,7 @@ export class DataAnalysisService {
           tipo: 'DESPESA'
         }),
       })
-      
+
       const data = await response.json()
       return data.id
     } catch (error) {
@@ -197,12 +197,12 @@ export class DataAnalysisService {
     try {
       // Log para debug
       console.log('🔍 Analisando dados da nota fiscal:', invoiceData)
-      
+
       // Verificação de segurança mais robusta
       if (!invoiceData) {
         throw new Error('Dados da nota fiscal não fornecidos')
       }
-      
+
       // Log detalhado da estrutura dos dados
       console.log('📋 Estrutura dos dados recebidos:', {
         keys: Object.keys(invoiceData),
@@ -211,11 +211,11 @@ export class DataAnalysisService {
         emitente: (invoiceData as any).emitente,
         destinatario: (invoiceData as any).destinatario
       })
-      
+
       // Tentar diferentes estruturas de dados
       let emitente: any = null
       let destinatario: any = null
-      
+
       // Estrutura 1: Fornecedor/Faturado (dados reais extraídos)
       if ((invoiceData as any).Fornecedor) {
         emitente = (invoiceData as any).Fornecedor
@@ -224,7 +224,7 @@ export class DataAnalysisService {
         emitente = invoiceData.emitente
         console.log('✅ Usando estrutura emitente:', emitente)
       }
-      
+
       if ((invoiceData as any).Faturado) {
         destinatario = (invoiceData as any).Faturado
         console.log('✅ Usando estrutura Faturado:', destinatario)
@@ -232,38 +232,38 @@ export class DataAnalysisService {
         destinatario = invoiceData.destinatario
         console.log('✅ Usando estrutura destinatario:', destinatario)
       }
-      
+
       // Verificar se encontrou os dados
       if (!emitente) {
         throw new Error('Dados do emitente/fornecedor não encontrados')
       }
-      
+
       if (!destinatario) {
         throw new Error('Dados do destinatário/faturado não encontrados')
       }
-      
+
       // Verificar se os campos essenciais existem (tentar diferentes nomes de campos)
-      const emitenteNome = emitente.nome || emitente.Nome || 
-                          emitente.razaoSocial || emitente.RazaoSocial || 
-                          emitente['Razão Social'] || emitente['Razao Social'] || 'N/A'
-      
-      const emitenteCnpj = emitente.cnpj || emitente.CNPJ || 
-                          emitente.cpf || emitente.CPF || 'N/A'
-      
-      const destinatarioNome = destinatario.nome || destinatario.Nome || 
-                              destinatario.razaoSocial || destinatario.RazaoSocial || 
-                              destinatario['Nome Completo'] || destinatario['Nome Completo'] || 'N/A'
-      
-      const destinatarioCnpj = destinatario.cnpj || destinatario.CNPJ || 
-                              destinatario.cpf || destinatario.CPF || 'N/A'
-      
+      const emitenteNome = emitente.nome || emitente.Nome ||
+        emitente.razaoSocial || emitente.RazaoSocial ||
+        emitente['Razão Social'] || emitente['Razao Social'] || 'N/A'
+
+      const emitenteCnpj = emitente.cnpj || emitente.CNPJ ||
+        emitente.cpf || emitente.CPF || 'N/A'
+
+      const destinatarioNome = destinatario.nome || destinatario.Nome ||
+        destinatario.razaoSocial || destinatario.RazaoSocial ||
+        destinatario['Nome Completo'] || destinatario['Nome Completo'] || 'N/A'
+
+      const destinatarioCnpj = destinatario.cnpj || destinatario.CNPJ ||
+        destinatario.cpf || destinatario.CPF || 'N/A'
+
       console.log('📊 Dados extraídos:', {
         emitenteNome,
         emitenteCnpj,
         destinatarioNome,
         destinatarioCnpj
       })
-      
+
       // Log detalhado dos campos encontrados
       console.log('🔍 Campos do emitente encontrados:', Object.keys(emitente))
       console.log('🔍 Campos do destinatário encontrados:', Object.keys(destinatario))
@@ -309,10 +309,10 @@ export class DataAnalysisService {
   // Gera descrição da despesa baseada nos itens da nota
   private generateDespesaDescription(invoiceData: any): string {
     console.log('🔍 Gerando descrição da despesa para:', invoiceData)
-    
+
     // Tentar diferentes estruturas para os itens
     let itens: any[] = []
-    
+
     if (invoiceData.itens && Array.isArray(invoiceData.itens)) {
       itens = invoiceData.itens
       console.log('✅ Usando estrutura itens:', itens)
@@ -323,17 +323,17 @@ export class DataAnalysisService {
       itens = (invoiceData as any).produtos
       console.log('✅ Usando estrutura produtos:', itens)
     }
-    
+
     console.log('📋 Itens encontrados:', itens.length)
-    
+
     if (itens.length === 0) {
       return 'COMPRAS GERAIS'
     }
-    
+
     // Tentar extrair a descrição do primeiro item
     let primeiraDescricao = ''
     const primeiroItem = itens[0]
-    
+
     if (typeof primeiroItem === 'string') {
       primeiraDescricao = primeiroItem
     } else if (primeiroItem.descricao) {
@@ -345,32 +345,32 @@ export class DataAnalysisService {
     } else if (primeiroItem.Nome) {
       primeiraDescricao = primeiroItem.Nome
     }
-    
+
     console.log('📝 Primeira descrição encontrada:', primeiraDescricao)
-    
+
     if (!primeiraDescricao) {
       return 'COMPRAS GERAIS'
     }
-    
+
     if (itens.length === 1) {
       return primeiraDescricao.toUpperCase()
     }
-    
+
     // Se há múltiplos itens, categoriza por tipo comum
     const descricaoLower = primeiraDescricao.toLowerCase()
-    
+
     if (descricaoLower.includes('manutenção') || descricaoLower.includes('manutencao')) {
       return 'MANUTENÇÃO E OPERAÇÃO'
     }
-    
+
     if (descricaoLower.includes('material') || descricaoLower.includes('peça')) {
       return 'MATERIAIS E PEÇAS'
     }
-    
+
     if (descricaoLower.includes('serviço') || descricaoLower.includes('servico')) {
       return 'SERVIÇOS GERAIS'
     }
-    
+
     return 'COMPRAS GERAIS'
   }
 }
