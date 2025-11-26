@@ -1,7 +1,7 @@
 import type { InvoiceData } from "../types"
 import { mockExtractInvoice } from "./mockExtraction"
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/extrator'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://joaovitormb.pythonanywhere.com/extrator'
 
 export interface ApiResponse<T> {
   data?: T
