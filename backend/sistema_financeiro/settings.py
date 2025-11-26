@@ -83,7 +83,18 @@ WSGI_APPLICATION = 'sistema_financeiro.wsgi.application'
 
 # Permite configurar via variáveis de ambiente para PostgreSQL.
 # Fallback automático para SQLite se não definido.
-if os.getenv('DB_ENGINE', '').lower() in ['postgres', 'postgresql', 'django.db.backends.postgresql']:
+if os.getenv('DB_ENGINE', '').lower() == 'mysql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('joaovitormb$default', 'sistema_financeiro'),
+            'USER': os.getenv('joaovitormb', 'root'),
+            'PASSWORD': os.getenv('my12345678sql', ''),
+            'HOST': os.getenv('joaovitormb.mysql.pythonanywhere-services.com', 'localhost'),
+            'PORT': os.getenv('3306', '3306'),
+        }
+    }
+elif os.getenv('DB_ENGINE', '').lower() in ['postgres', 'postgresql', 'django.db.backends.postgresql']:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
